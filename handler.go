@@ -13,13 +13,14 @@ import (
 )
 
 const (
-	ContentTypeJSON           = "application/json"
-	ContentTypeGraphQL        = "application/graphql"
-	ContentTypeFormURLEncoded = "application/x-www-form-urlencoded"
+	ContentTypeJSON              = "application/json"
+	ContentTypeGraphQL           = "application/graphql"
+	ContentTypeFormURLEncoded    = "application/x-www-form-urlencoded"
+	ContentTypeMultipartFormData = "multipart/form-data"
 )
 
 type Handler struct {
-	Schema *graphql.Schema
+	Schema   *graphql.Schema
 	pretty   bool
 	graphiql bool
 }
@@ -92,7 +93,15 @@ func NewRequestOptions(r *http.Request) *RequestOptions {
 		}
 
 		return &RequestOptions{}
-
+	case ContentTypeMultipartFormData:
+		variables := make(map[string]interface{}, len(r.FormValue("variables")))
+		variablesStr := r.FormValue("variables")
+		json.Unmarshal([]byte(variablesStr), &variables)
+		return &RequestOptions{
+			Query:         r.FormValue("query"),
+			Variables:     variables,
+			OperationName: r.FormValue("operationName"),
+		}
 	case ContentTypeJSON:
 		fallthrough
 	default:
